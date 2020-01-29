@@ -9,11 +9,11 @@ var cors = require('cors');
 // configs come from standard PostgreSQL env vars
 // https://www.postgresql.org/docs/9.6/static/libpq-envars.html
 const pool = new pg.Pool({
-	PGHOST: process.env.PGHOST,
-	PGPORT: process.env.PGPORT,
-	PGDATABASE: process.env.PGDATABASE,
-	PGUSER: process.env.PGUSER,
-	PGPASSWORD: process.env.PGPASSWORD
+  PGHOST: process.env.PGHOST,
+  PGPORT: process.env.PGPORT,
+  PGDATABASE: process.env.PGDATABASE,
+  PGUSER: process.env.PGUSER,
+  PGPASSWORD: process.env.PGPASSWORD
 });
 //req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
@@ -33,42 +33,42 @@ app.use(bypass);
 app.use(rateLimiter);
 
 const queryHandler = (req, res, next) => {
-	//if user limit-rates are met, then this will be bypassed
-	if (!req.bypass.queryHandler) {
-		pool
-			.query(req.sqlQuery, Object.values(req.body))
-			.then(r => {
-				return res.json(r.rows || []);
-			})
-			.catch(next);
-	} else {
-		next();
-	}
+  //if user limit-rates are met, then this will be bypassed
+  if (!req.bypass.queryHandler) {
+    pool
+      .query(req.sqlQuery, Object.values(req.body))
+      .then(r => {
+        return res.json(r.rows || []);
+      })
+      .catch(next);
+  } else {
+    next();
+  }
 };
 
 app.get('/', (req, res) => {
-	res.send('Welcome to EQ Works 😎');
+  res.send('Welcome to EQ Works 😎');
 });
 
 app.get(
-	'/events/hourly',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/events/hourly',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT date, hour, events, public.hourly_events.poi_id
     FROM public.hourly_events
     ORDER BY date, hour
     LIMIT 168;
   `;
-		console.log(req.query);
-		return next();
-	},
-	queryHandler
+    console.log(req.query);
+    return next();
+  },
+  queryHandler
 );
 
 app.post(
-	'/events/daily',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/events/daily',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT date, SUM(events) AS events, poi.name
     FROM public.hourly_events
     JOIN public.poi ON  public.hourly_events.poi_id=public.poi.poi_id
@@ -78,15 +78,15 @@ app.post(
     LIMIT 7;
   `;
 
-		return next();
-	},
-	queryHandler
+    return next();
+  },
+  queryHandler
 );
 
 app.post(
-	'/stats/hourly/avg',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/stats/hourly/avg',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT  public.hourly_stats.poi_id as id, name, hour, CAST(avg(impressions) as INT) as impressions, CAST(avg(clicks) as INT) as clicks, CAST(avg(revenue) as INT) as revenue
 
     FROM public.hourly_stats
@@ -96,15 +96,15 @@ app.post(
       ORDER BY hour
     LIMIT 30;
   `;
-		return next();
-	},
-	queryHandler
+    return next();
+  },
+  queryHandler
 );
 
 app.post(
-	'/stats/hourly/sum',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/stats/hourly/sum',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT  name, hour,  sum(impressions) as impressions, sum(clicks) as clicks, sum(revenue) as revenue
 
     FROM public.hourly_stats
@@ -114,15 +114,15 @@ app.post(
       ORDER BY hour
     LIMIT 30;
   `;
-		return next();
-	},
-	queryHandler
+    return next();
+  },
+  queryHandler
 );
 
 app.post(
-	'/stats/daily',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/stats/daily',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT date,
         SUM(impressions) AS impressions,
         SUM(clicks) AS clicks,
@@ -134,68 +134,68 @@ app.post(
     ORDER BY date
     LIMIT 7;
   `;
-		return next();
-	},
-	queryHandler
+    return next();
+  },
+  queryHandler
 );
 
 app.get(
-	'/events/hourly',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/events/hourly',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT poi.name, date, hour, events
     FROM public.hourly_events
-    JOIN poi ON poi.poi_id = public.hourly_state.poi_id
+    JOIN poi ON poi.poi_id = public.hourly_events.poi_id
     ORDER BY date, hour
     LIMIT 168;
   `;
-		return next();
-	},
-	queryHandler
+    return next();
+  },
+  queryHandler
 );
 
 app.get(
-	'/poi',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/poi',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT *
     FROM public.poi;
   `;
-		return next();
-	},
-	queryHandler
+    return next();
+  },
+  queryHandler
 );
 
 app.get(
-	'/stats/hourly',
-	(req, res, next) => {
-		req.sqlQuery = `
+  '/stats/hourly',
+  (req, res, next) => {
+    req.sqlQuery = `
     SELECT public.poi.name, date, hour, impressions, clicks, revenue
     FROM public.hourly_stats
-    JOIN poi ON poi.poi_id = public.hourly_state.poi_id
+    JOIN poi ON poi.poi_id = public.hourly_stats.poi_id
     ORDER BY date, hour
     LIMIT 168;
   `;
-		return next();
-	},
-	queryHandler
+    return next();
+  },
+  queryHandler
 );
 
 app.listen(process.env.PORT || 5555, err => {
-	if (err) {
-		console.error(err);
-		process.exit(1);
-	} else {
-		console.log(`Running on ${process.env.PORT || 5555}`);
-	}
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  } else {
+    console.log(`Running on ${process.env.PORT || 5555}`);
+  }
 });
 
 // last resorts
 process.on('uncaughtException', err => {
-	console.log(`Caught exception: ${err}`);
-	process.exit(1);
+  console.log(`Caught exception: ${err}`);
+  process.exit(1);
 });
 process.on('unhandledRejection', (reason, p) => {
-	console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
-	process.exit(1);
+  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+  process.exit(1);
 });
