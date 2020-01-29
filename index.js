@@ -105,12 +105,12 @@ app.post(
 	'/stats/hourly/sum',
 	(req, res, next) => {
 		req.sqlQuery = `
-    SELECT  hour,  sum(impressions) as impressions, sum(clicks) as clicks, sum(revenue) as revenue
+    SELECT  name, hour,  sum(impressions) as impressions, sum(clicks) as clicks, sum(revenue) as revenue
 
     FROM public.hourly_stats
     JOIN public.poi ON public.poi.poi_id = public.hourly_stats.poi_id
       WHERE public.poi.poi_id = $1 AND date > $2 AND date < $3
-      GROUP BY hour   
+      GROUP BY hour, name
       ORDER BY hour
     LIMIT 30;
   `;
@@ -140,11 +140,41 @@ app.post(
 );
 
 app.get(
+	'/events/hourly',
+	(req, res, next) => {
+		req.sqlQuery = `
+    SELECT poi.name, date, hour, events
+    FROM public.hourly_events
+    JOIN poi ON poi.poi_id = public.hourly_state.poi_id
+    ORDER BY date, hour
+    LIMIT 168;
+  `;
+		return next();
+	},
+	queryHandler
+);
+
+app.get(
 	'/poi',
 	(req, res, next) => {
 		req.sqlQuery = `
     SELECT *
     FROM public.poi;
+  `;
+		return next();
+	},
+	queryHandler
+);
+
+app.get(
+	'/stats/hourly',
+	(req, res, next) => {
+		req.sqlQuery = `
+    SELECT public.poi.name, date, hour, impressions, clicks, revenue
+    FROM public.hourly_stats
+    JOIN poi ON poi.poi_id = public.hourly_state.poi_id
+    ORDER BY date, hour
+    LIMIT 168;
   `;
 		return next();
 	},
