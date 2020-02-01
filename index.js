@@ -75,6 +75,7 @@ app.post(
       WHERE public.hourly_events.poi_id = $1 
       GROUP BY poi.name, date
     ORDER BY date
+    OFFSET ($2 * 7) ROWS
     LIMIT 7;
   `;
 
@@ -132,6 +133,7 @@ app.post(
       WHERE public.poi.poi_id = $1
       GROUP BY date, name
     ORDER BY date
+    OFFSET ($2 * 7) ROWS
     LIMIT 7;
   `;
 		return next();
@@ -139,15 +141,46 @@ app.post(
 	queryHandler
 );
 
-app.get(
+app.post(
 	'/events/hourly',
 	(req, res, next) => {
 		req.sqlQuery = `
-    SELECT poi.name, date, hour, events
+    SELECT poi.name, date, hour, events, public.poi.lat, public.poi.lon
     FROM public.hourly_events
     JOIN poi ON poi.poi_id = public.hourly_events.poi_id
     ORDER BY date, hour
+    OFFSET ($1 * 168) ROWS
     LIMIT 168;
+  `;
+		return next();
+	},
+	queryHandler
+);
+app.get(
+	'/events/hourly/geosum',
+	(req, res, next) => {
+		req.sqlQuery = `
+    SELECT poi.name, SUM(events) as events, public.poi.lat, public.poi.lon
+    FROM public.hourly_events
+    JOIN poi ON poi.poi_id = public.hourly_events.poi_id
+    GROUP BY poi.name, poi.lat, poi.lon
+    ORDER BY events
+   
+  `;
+		return next();
+	},
+	queryHandler
+);
+app.get(
+	'/stats/hourly/geosum',
+	(req, res, next) => {
+		req.sqlQuery = `
+    SELECT public.poi.name,  SUM(impressions) as impressions, SUM(clicks) as clicks, SUM(revenue) as revenue, public.poi.lat, public.poi.lon
+    FROM public.hourly_stats
+    JOIN poi ON poi.poi_id = public.hourly_stats.poi_id
+    GROUP BY poi.name, poi.lat, poi.lon
+    ORDER BY impressions, clicks, revenue
+   
   `;
 		return next();
 	},
@@ -166,14 +199,15 @@ app.get(
 	queryHandler
 );
 
-app.get(
+app.post(
 	'/stats/hourly',
 	(req, res, next) => {
 		req.sqlQuery = `
-    SELECT public.poi.name, date, hour, impressions, clicks, revenue
+    SELECT public.poi.name, date, hour, impressions, clicks, revenue, public.poi.lat, public.poi.lon
     FROM public.hourly_stats
     JOIN poi ON poi.poi_id = public.hourly_stats.poi_id
     ORDER BY date, hour
+    OFFSET ($1 * 168) ROWS
     LIMIT 168;
   `;
 		return next();
